@@ -40,7 +40,8 @@ import unittest
 import random
 import socket
 import sys
-from umemcache import Client, MemcachedError
+from umemcache import MemcachedError
+from umemcache import Client
 
 
 MEMCACHED_HOST = "127.0.0.1"
@@ -66,8 +67,8 @@ class Testumemcache(unittest.TestCase):
             return "".join(chr(random.randrange(33, 64)) for i in xrange(size))
 
 
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
 
         count = 0
 
@@ -80,13 +81,11 @@ class Testumemcache(unittest.TestCase):
             count += 1
 
             if len(value) != len(v2):
-                print "%d %d != %d" % (count, len(value), len(v2))
-
-            #self.assertEquals(value, v2)
+                print("{0} {1} != {2}".format(count, len(value), len(v2)))
 
     def testBigDataFail(self):
-    	c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         data = "31337" * 10000
 
         for x in xrange(0, 10):
@@ -95,9 +94,9 @@ class Testumemcache(unittest.TestCase):
 
 
     def testSetExpiration(self):
-    	c = Client(MEMCACHED_ADDRESS);
-        c.connect();
-    	c.set("test", "1", 60, 2)
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
+        c.set("test", "1", 60, 2)
 
     def testSegfault(self):
         try:
@@ -108,35 +107,30 @@ class Testumemcache(unittest.TestCase):
 
 
     def testConnect(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
-        self.assertEquals(True, c.is_connected());
-        pass
-
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
+        self.assertEquals(True, c.is_connected())
 
     def testDisconnect(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
-        c.disconnect();
-        self.assertEquals(False, c.is_connected());
-        pass
-
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
+        c.disconnect()
+        self.assertEquals(False, c.is_connected())
 
     def testClose(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
-        c.close();
-        self.assertEquals(False, c.is_connected());
-        pass
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
+        c.close()
+        self.assertEquals(False, c.is_connected())
 
     def testConnectTwice(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
-        c.disconnect();
-        self.assertEquals(False, c.is_connected());
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
+        c.disconnect()
+        self.assertEquals(False, c.is_connected())
 
         try:
-            c.connect();
+            c.connect()
             assert False
         except (MemcachedError):
             pass
@@ -149,9 +143,9 @@ class Testumemcache(unittest.TestCase):
         self.assertRaises(RuntimeError, c.set, 'key1', 'xx')
 
     def testConnectCloseQuery(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
-        c.disconnect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
+        c.disconnect()
         try:
             r = c.set("jonas", "kaka", 0, False)
             assert False
@@ -160,8 +154,8 @@ class Testumemcache(unittest.TestCase):
 
 
     def testOversizedKey(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         data = "A" * (1000 * 1000 * 2)
         try:
             r = c.set("test", data)
@@ -171,16 +165,16 @@ class Testumemcache(unittest.TestCase):
 
 
     def testGet(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key", "value")
         self.assertEquals("value", c.get("key")[0])
         self.assertEquals(None, c.get("key23123"))
         pass
 
     def testGets(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key", "value")
         self.assertEquals("value", c.gets("key")[0])
         self.assertEquals(None, c.gets("key23123"))
@@ -190,16 +184,16 @@ class Testumemcache(unittest.TestCase):
 
 
     def testSet(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key", "my new value")
         self.assertEquals("my new value", c.get("key")[0])
         pass
 
 
     def testGet_multi(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "value1")
         c.set("key2", "value2")
         c.set("key3", "value3")
@@ -215,8 +209,8 @@ class Testumemcache(unittest.TestCase):
 
 
     def testGets_multi(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "value1")
         c.set("key2", "value2")
         c.set("key3", "value3")
@@ -233,39 +227,39 @@ class Testumemcache(unittest.TestCase):
         pass
 
     def testAdd(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "value1")
         self.assertEquals("NOT_STORED", c.add("key1", "value"))
         pass
 
     def testReplace(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "value1")
         self.assertEquals("STORED", c.replace("key1", "value"))
         pass
 
         pass
     def testAppend(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "a")
         self.assertEquals("STORED", c.append("key1", "b"))
         self.assertEquals("ab", c.get("key1")[0])
         pass
 
     def testPrepend(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "a")
         self.assertEquals("STORED", c.prepend("key1", "b"))
         self.assertEquals("ba", c.get("key1")[0])
         pass
 
     def testDel(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "a")
         c.delete("key1")
         self.assertEquals(None, c.get("key1"))
@@ -273,8 +267,8 @@ class Testumemcache(unittest.TestCase):
 
 
     def testCas(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "a")
         value, flags, cas = c.gets("key1")
         self.assertEquals("STORED", c.cas("key1", "b", cas))
@@ -299,68 +293,66 @@ class Testumemcache(unittest.TestCase):
         self.assertEquals("STORED", c.cas("key2", "b", cas2))
 
     def testIncr(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "0")
         c.incr("key1", 313370)
         self.assertEquals("313370", c.get("key1")[0])
 
     def testDecr(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "31337")
         c.decr("key1", 31337)
         self.assertEquals(0, long(c.get("key1")[0]))
 
 
     def testVersion(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         v = c.version()
-        l = v.split('.');
+        l = v.split('.')
 
         self.assertEquals(3, len(l))
 
     def testStats(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         d = c.stats()
 
         self.assertTrue (d.has_key("uptime"))
         self.assertTrue (d.has_key("bytes"))
 
     def testConnectFails(self):
-        c = Client("130.244.1.1:31337");
+        c = Client("130.244.1.1:31337")
         c.sock.settimeout(2)
         try:
-            c.connect();
+            c.connect()
             assert False
         except:
             pass
 
-        c.disconnect();
-        pass
+        c.disconnect()
 
     def testConnectDNSOK(self):
-        c = Client("localhost:11211");
-        c.connect();
-        c.disconnect();
-        pass
+        c = Client("localhost:11211")
+        c.connect()
+        c.disconnect()
 
     def testConnectDNSFails(self):
-        c = Client("flensost:12111");
+        c = Client("flensost:12111")
         try:
-            c.connect();
+            c.connect()
             assert False
         except:
             pass
 
-        c.disconnect();
+        c.disconnect()
         pass
 
     def testFlushAll(self):
-        c = Client(MEMCACHED_ADDRESS);
-        c.connect();
+        c = Client(MEMCACHED_ADDRESS)
+        c.connect()
         c.set("key1", "31337")
         self.assertEquals(c.get("key1")[0], "31337")
         c.flush_all()
@@ -428,4 +420,4 @@ if __name__ == '__main__':
                 unittest.main()
             finally:
                 heap = hp.heapu()
-                print heap
+                print(heap)

@@ -82,8 +82,13 @@ int API_send(SOCKETDESC *desc, void *data, size_t cbData)
   PyObject *funcStr;
   int ret;
 
+  #if PY_MAJOR_VERSION >= 3
+  funcStr = PyUnicode_FromString("send");
+  pybuffer = PyUnicode_FromStringAndSize( (char *) data, cbData);
+  #else
   funcStr = PyString_FromString("send");
   pybuffer = PyString_FromStringAndSize( (char *) data, cbData);
+  #endif
   res = PyObject_CallMethodObjArgs (client->sock, funcStr, pybuffer, NULL);
   Py_DECREF(funcStr);
   Py_DECREF(pybuffer);
@@ -93,7 +98,11 @@ int API_send(SOCKETDESC *desc, void *data, size_t cbData)
     return -1;
   }
 
+  #if PY_MAJOR_VERSION >= 3
+  ret = (int) PyLong_AsLong(res);
+  #else
   ret = (int) PyInt_AsLong(res);
+  #endif
   Py_DECREF(res);
   return ret;
 }
@@ -115,8 +124,13 @@ int API_recv(SOCKETDESC *desc, void *data, size_t cbMaxData)
   PyObject *funcStr;
   int ret;
 
+  #if PY_MAJOR_VERSION >= 3
+  funcStr = PyUnicode_FromString("recv");
+  bufSize = PyLong_FromLong(cbMaxData);
+  #else
   funcStr = PyString_FromString("recv");
   bufSize = PyInt_FromLong(cbMaxData);
+  #endif
   res = PyObject_CallMethodObjArgs (client->sock, funcStr, bufSize, NULL);
   Py_DECREF(funcStr);
   Py_DECREF(bufSize);
@@ -126,8 +140,13 @@ int API_recv(SOCKETDESC *desc, void *data, size_t cbMaxData)
     return -1;
   }
 
+  #if PY_MAJOR_VERSION >= 3
+  ret = (int) PyUnicode_GET_SIZE(res);
+  memcpy (data, _PyUnicode_AsString(res), ret);
+  #else
   ret = (int) PyString_GET_SIZE(res);
   memcpy (data, PyString_AS_STRING(res), ret);
+  #endif
   Py_DECREF(res);
   return ret;
 }
@@ -155,8 +174,13 @@ int API_connect(SOCKETDESC *desc, const char *address, int port)
   //Increment client->host before dropping into tuple
   Py_INCREF(client->host);
   PyTuple_SET_ITEM(args, 0, client->host);
+  #if PY_MAJOR_VERSION >= 3
+  PyTuple_SET_ITEM(args, 1, PyLong_FromLong(client->port));
+  PyObject *method = PyUnicode_FromString("connect");
+  #else
   PyTuple_SET_ITEM(args, 1, PyInt_FromLong(client->port));
   PyObject *method = PyString_FromString("connect");
+  #endif
 
   PyObject *res = PyObject_CallMethodObjArgs(client->sock, method, args, NULL);
 
@@ -252,7 +276,7 @@ int Client_init(PyClient *self, PyObject *args, PyObject *kwargs)
   char *address;
   PRINTMARK();
 
-  static char *kwlist[] = {"address", "max_item_size", NULL};
+  static char *kwlist[] = {(char *)"address", (char *)"max_item_size", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|i", kwlist, &address, &self->maxSize))
   {
@@ -271,8 +295,11 @@ int Client_init(PyClient *self, PyObject *args, PyObject *kwargs)
 
   char *port = address + (offset - address) + 1;
 
-
+  #if PY_MAJOR_VERSION >= 3
+  self->host = PyUnicode_FromStringAndSize(address, (offset - address));
+  #else
   self->host = PyString_FromStringAndSize(address, (offset - address));
+  #endif
   self->port = atoi(port);
   Py_INCREF(self->host);
   PRINTMARK();
@@ -309,7 +336,11 @@ PyObject *Client_connect(PyClient *self, PyObject *args)
     return PyErr_Format(umemcache_MemcachedError, "Client can not be reconnected");
   }
 
+  #if PY_MAJOR_VERSION >= 3
+  if (!self->client->connect (_PyUnicode_AsString(self->host), self->port))
+  #else
   if (!self->client->connect (PyString_AS_STRING(self->host), self->port))
+  #endif
   {
     PRINTMARK();
     return NULL;
@@ -370,7 +401,11 @@ PyObject *Client_command(PyClient *self, PFN_COMMAND cmd, PyObject *args)
   {
     if (self->client->getResult(&pResult, &cbResult))
     {
+      #if PY_MAJOR_VERSION >= 3
+      return PyUnicode_FromStringAndSize(pResult, cbResult);
+      #else
       return PyString_FromStringAndSize(pResult, cbResult);
+      #endif
     }
     else
     {
@@ -444,8 +479,13 @@ PyObject *Client_get(PyClient *self, PyObject *args)
   }
 
   PyObject *otuple = PyTuple_New(2);
+  #if PY_MAJOR_VERSION >= 3
+  PyObject *ovalue = PyUnicode_FromStringAndSize(pData, cbData);
+  PyObject *oflags = PyLong_FromLong(flags);
+  #else
   PyObject *ovalue = PyString_FromStringAndSize(pData, cbData);
   PyObject *oflags = PyInt_FromLong(flags);
+  #endif
 
   PyTuple_SET_ITEM(otuple, 0, ovalue);
   PyTuple_SET_ITEM(otuple, 1, oflags);
@@ -507,8 +547,13 @@ PyObject *Client_gets(PyClient *self, PyObject *args)
 
 
   PyObject *otuple = PyTuple_New(3);
+  #if PY_MAJOR_VERSION >= 3
+  PyObject *ovalue = PyUnicode_FromStringAndSize(pData, cbData);
+  PyObject *oflags = PyLong_FromLong(flags);
+  #else
   PyObject *ovalue = PyString_FromStringAndSize(pData, cbData);
   PyObject *oflags = PyInt_FromLong(flags);
+  #endif
   PyObject *ocas = PyLong_FromUnsignedLongLong(cas);
 
   PyTuple_SET_ITEM(otuple, 0, ovalue);
@@ -558,7 +603,11 @@ PyObject *Client_get_multi(PyClient *self, PyObject *okeys)
   {
     PyObject *ostr;
 
+    #if PY_MAJOR_VERSION >= 3
+    if (PyUnicode_Check(arg))
+    #else
     if (PyString_Check(arg))
+    #endif
     {
       ostr = arg;
     }
@@ -567,7 +616,11 @@ PyObject *Client_get_multi(PyClient *self, PyObject *okeys)
       ostr = PyObject_Str(arg);
     }
 
+    #if PY_MAJOR_VERSION >= 3
+    self->client->getKeyWrite(_PyUnicode_AsString(ostr), PyUnicode_GET_SIZE(ostr));
+    #else
     self->client->getKeyWrite(PyString_AS_STRING(ostr), PyString_GET_SIZE(ostr));
+    #endif
     if (ostr != arg)
     {
       Py_DECREF(ostr);
@@ -585,10 +638,16 @@ PyObject *Client_get_multi(PyClient *self, PyObject *okeys)
 
   while (self->client->getReadNext(&pKey, &cbKey, &pData, &cbData, &flags, &cas, &bError))
   {
+    #if PY_MAJOR_VERSION >= 3
+    PyObject *okey  = PyUnicode_FromStringAndSize(pKey, cbKey);
+    PyObject *ovalue = PyUnicode_FromStringAndSize(pData, cbData);
+    PyObject *oflags = PyLong_FromLong(flags);
+    #else
     PyObject *okey  = PyString_FromStringAndSize(pKey, cbKey);
-    PyObject *otuple = PyTuple_New(2);
     PyObject *ovalue = PyString_FromStringAndSize(pData, cbData);
     PyObject *oflags = PyInt_FromLong(flags);
+    #endif
+    PyObject *otuple = PyTuple_New(2);
 
     PyTuple_SET_ITEM(otuple, 0, ovalue);
     PyTuple_SET_ITEM(otuple, 1, oflags);
@@ -639,7 +698,11 @@ PyObject *Client_gets_multi(PyClient *self, PyObject *okeys)
   {
     PyObject *ostr;
 
+    #if PY_MAJOR_VERSION >= 3
+    if (PyUnicode_Check(arg))
+    #else
     if (PyString_Check(arg))
+    #endif
     {
       ostr = arg;
     }
@@ -648,7 +711,11 @@ PyObject *Client_gets_multi(PyClient *self, PyObject *okeys)
       ostr = PyObject_Str(arg);
     }
 
+    #if PY_MAJOR_VERSION >= 3
+    self->client->getKeyWrite(_PyUnicode_AsString(ostr), PyUnicode_GET_SIZE(ostr));
+    #else
     self->client->getKeyWrite(PyString_AS_STRING(ostr), PyString_GET_SIZE(ostr));
+    #endif
     if (ostr != arg)
     {
       Py_DECREF(ostr);
@@ -666,10 +733,17 @@ PyObject *Client_gets_multi(PyClient *self, PyObject *okeys)
 
   while (self->client->getReadNext(&pKey, &cbKey, &pData, &cbData, &flags, &cas, &bError))
   {
+    #if PY_MAJOR_VERSION >= 3
+    PyObject *okey  = PyUnicode_FromStringAndSize(pKey, cbKey);
+    PyObject *ovalue = PyUnicode_FromStringAndSize(pData, cbData);
+    PyObject *oflags = PyLong_FromLong(flags);
+    #else
     PyObject *okey  = PyString_FromStringAndSize(pKey, cbKey);
-    PyObject *otuple = PyTuple_New(3);
     PyObject *ovalue = PyString_FromStringAndSize(pData, cbData);
     PyObject *oflags = PyInt_FromLong(flags);
+    #endif
+    PyObject *otuple = PyTuple_New(3);
+
     PyObject *ocas = PyLong_FromUnsignedLongLong(cas);
 
     PyTuple_SET_ITEM(otuple, 0, ovalue);
@@ -726,7 +800,11 @@ PyObject *Client_delete(PyClient *self, PyObject *args)
   {
     if (self->client->getResult(&pResult, &cbResult))
     {
+      #if PY_MAJOR_VERSION >= 3
+      return PyUnicode_FromStringAndSize(pResult, cbResult);
+      #else
       return PyString_FromStringAndSize(pResult, cbResult);
+      #endif
     }
     else
     {
@@ -773,7 +851,11 @@ PyObject *Client_cas(PyClient *self, PyObject *args)
   {
     if (self->client->getResult(&pResult, &cbResult))
     {
+      #if PY_MAJOR_VERSION >= 3
+      return PyUnicode_FromStringAndSize(pResult, cbResult);
+      #else
       return PyString_FromStringAndSize(pResult, cbResult);
+      #endif
     }
     else
     {
@@ -822,7 +904,11 @@ PyObject *Client_incr(PyClient *self, PyObject *args)
         return PyErr_Format(umemcache_MemcachedError, pResult);
       }
 
+      #if PY_MAJOR_VERSION >= 3
+      return PyUnicode_FromStringAndSize(pResult, cbResult);
+      #else
       return PyString_FromStringAndSize(pResult, cbResult);
+      #endif
     }
     else
     {
@@ -870,7 +956,11 @@ PyObject *Client_decr(PyClient *self, PyObject *args)
         return PyErr_Format(umemcache_MemcachedError, pResult);
       }
 
+      #if PY_MAJOR_VERSION >= 3
+      return PyUnicode_FromStringAndSize(pResult, cbResult);
+      #else
       return PyString_FromStringAndSize(pResult, cbResult);
+      #endif
     }
     else
     {
@@ -891,7 +981,11 @@ PyObject *Client_version(PyClient *self, PyObject *args)
     return PyErr_Format(umemcache_MemcachedError, "Could not retrieve version");
   }
 
+  #if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromStringAndSize(pVersion, cbVersion);
+  #else
   return PyString_FromStringAndSize(pVersion, cbVersion);
+  #endif
 }
 
 PyObject *Client_stats(PyClient *self, PyObject *args)
@@ -910,8 +1004,13 @@ PyObject *Client_stats(PyClient *self, PyObject *args)
 
   while (self->client->getStats(&pName, &cbName, &pValue, &cbValue))
   {
+    #if PY_MAJOR_VERSION >= 3
+    PyObject *oname  = PyUnicode_FromStringAndSize(pName, cbName);
+    PyObject *ovalue = PyUnicode_FromStringAndSize(pValue, cbValue);
+    #else
     PyObject *oname  = PyString_FromStringAndSize(pName, cbName);
     PyObject *ovalue = PyString_FromStringAndSize(pValue, cbValue);
+    #endif
 
     PyDict_SetItem (odict, oname, ovalue);
   }
@@ -947,7 +1046,11 @@ PyObject *Client_flush_all(PyClient *self, PyObject *args)
   {
     if (self->client->getResult(&pResult, &cbResult))
     {
+      #if PY_MAJOR_VERSION >= 3
+      return PyUnicode_FromStringAndSize(pResult, cbResult);
+      #else
       return PyString_FromStringAndSize(pResult, cbResult);
+      #endif
     }
     else
     {
@@ -968,7 +1071,11 @@ PyObject *Client_set_timeout(PyClient *self, PyObject *args)
     return NULL;
   }
 
+  #if PY_MAJOR_VERSION >= 3
+  PyObject *method = PyUnicode_FromString("settimeout");
+  #else
   PyObject *method = PyString_FromString("settimeout");
+  #endif
   PyObject *res = PyObject_CallMethodObjArgs(self->sock, method, timeout, NULL);
 
   PRINTMARK();
@@ -981,7 +1088,11 @@ PyObject *Client_set_timeout(PyClient *self, PyObject *args)
 PyObject *Client_get_timeout(PyClient *self, PyObject *args)
 {
 
+  #if PY_MAJOR_VERSION >= 3
+  PyObject *method = PyUnicode_FromString("gettimeout");
+  #else
   PyObject *method = PyString_FromString("gettimeout");
+  #endif
   PyObject *res = PyObject_CallMethodObjArgs(self->sock, method, NULL);
 
   PRINTMARK();
@@ -1048,17 +1159,19 @@ static PyMethodDef Client_methods[] = {
 };
 
 static PyMemberDef Client_members[] = {
-    {"max_item_size", T_INT, offsetof(PyClient, maxSize), READONLY, "Max item size"},
-    {"sock", T_OBJECT_EX, offsetof(PyClient, sock), READONLY, "Socket instance"},
-    {"host", T_OBJECT_EX, offsetof(PyClient, host), READONLY, "Host"},
-    {"port", T_INT, offsetof(PyClient, port), READONLY, "Port"},
+    {(char *)"max_item_size", T_INT, offsetof(PyClient, maxSize), READONLY, (char *)"Max item size"},
+    {(char *)"sock", T_OBJECT_EX, offsetof(PyClient, sock), READONLY, (char *)"Socket instance"},
+    {(char *)"host", T_OBJECT_EX, offsetof(PyClient, host), READONLY, (char *)"Host"},
+    {(char *)"port", T_INT, offsetof(PyClient, port), READONLY, (char *)"Port"},
     {NULL}  /* Sentinel */
 };
 
 
 static PyTypeObject ClientType = {
   PyObject_HEAD_INIT(NULL)
+  #if PY_MAJOR_VERSION <= 2
   0,                /* ob_size        */
+  #endif
   "umemcache.Client",        /* tp_name        */
   sizeof(PyClient),        /* tp_basicsize   */
   0,                /* tp_itemsize    */
@@ -1106,21 +1219,55 @@ static PyMethodDef methods[] = {
 
 
 PyMODINIT_FUNC
+  #if PY_MAJOR_VERSION >= 3
+  PyInit_umemcache(void)
+  #else
   initumemcache(void)
+  #endif
 {
   PyObject* m;
 
+  #if PY_MAJOR_VERSION >= 3
+  static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "umemcache", /* m_name */
+    "", /* m_doc */
+    -1, /* m_size */
+    methods, /* m_methods */
+    NULL, /* m_reload */
+    NULL, /* m_traverse */
+    NULL, /* m_clear */
+    NULL, /* m_free */
+  };
+  m = PyModule_Create(&moduledef);
+  #else
   m = Py_InitModule3("umemcache", methods, "");
+  #endif
+
   if (m == NULL)
+    #if PY_MAJOR_VERSION >= 3
+    return NULL;
+    #else
     return;
+    #endif
 
   ClientType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&ClientType) < 0)
+    #if PY_MAJOR_VERSION >= 3
+    return NULL;
+    #else
     return;
+    #endif
   Py_INCREF(&ClientType);
   PyModule_AddObject(m, "Client", (PyObject *)&ClientType);
 
+
   umemcache_MemcachedError = PyErr_NewException("umemcache.MemcachedError",
-      PyExc_RuntimeError, NULL); 
-  PyModule_AddObject(m, "MemcachedError", (PyObject *)umemcache_MemcachedError);
+						PyExc_RuntimeError, NULL); 
+  Py_INCREF(umemcache_MemcachedError);
+  PyModule_AddObject(m, "MemcachedError", umemcache_MemcachedError);
+
+  #if PY_MAJOR_VERSION >= 3
+  return m;
+  #endif
 }

@@ -53,7 +53,7 @@ if sys.platform == "win32":
 
 module1 = Extension('umemcache',
                 sources = ['./python/umemcache.cpp', './lib/PacketReader.cpp', './lib/PacketWriter.cpp', './lib/Client.cpp'],
-                include_dirs = ['./lib/'],
+                include_dirs = ['./python/','./lib/'],
                 library_dirs = [],
                 libraries=libs,
                 define_macros=[('WIN32_LEAN_AND_MEAN', None)])
