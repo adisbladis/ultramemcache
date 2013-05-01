@@ -94,14 +94,6 @@ class Testumemcache(unittest.TestCase):
             c.set("fsdafbdsakjfjdkfjadklsafdsafdsaffdsafdasfdsafdasfsdafdsafdsafasdas" + str(x), data, 604830, 17, True)
 
 
-    def testIncrDecrString(self):
-    	c = Client(MEMCACHED_ADDRESS);
-        c.connect();
-        c.set("test", "hej")
-    	self.assertRaises(Exception, c.incr, "test", 1)
-    	self.assertRaises(Exception, c.decr, "test", 5)
-
-
     def testSetExpiration(self):
     	c = Client(MEMCACHED_ADDRESS);
         c.connect();
